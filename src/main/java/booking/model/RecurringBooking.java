@@ -10,10 +10,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * Регулярная бронь. Редактируемая, новое поле — дни недели.
- * Начало и конец задают время (и первую дату) брони, дальше она повторяется по выбранным дням.
- */
+//Регулярная бронь. Новое поле — дни недели
 public class RecurringBooking extends Booking implements Editable {
     private static final Locale RU = Locale.forLanguageTag("ru");
 

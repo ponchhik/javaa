@@ -3,7 +3,7 @@ package booking.model;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** Обычная (разовая) бронь. Редактируемая, новое поле — комментарий. */
+// Обычная бронь
 public class SingleBooking extends Booking implements Editable {
     private String comment;
 

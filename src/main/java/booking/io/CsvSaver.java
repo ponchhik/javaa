@@ -8,7 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-/** Сохранение броней в CSV (тот же формат, что читает CsvLoader). */
+// Сохранение броней в CSV
 public final class CsvSaver {
 
     public void save(Path file, List<Booking> bookings) throws IOException {

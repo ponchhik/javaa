@@ -4,10 +4,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Базовая сущность «Бронь»: общие поля для всех видов броней.
- * Сам класс абстрактный — в программе существуют только его наследники.
- */
 public abstract class Booking {
     private final int id;
     private String room;
@@ -34,26 +30,25 @@ public abstract class Booking {
     public void setStart(LocalDateTime start) { this.start = start; }
     public void setEnd(LocalDateTime end) { this.end = end; }
 
-    /** Код типа для CSV-файла (SINGLE / RECURRING / PAST). */
     public abstract String csvType();
 
-    /** Название типа для таблицы в GUI. */
+    //Название типа для таблицы в GUI
     public abstract String typeTitle();
 
-    /** Значение дополнительного поля для записи в CSV. */
+    //Значение дополнительного поля для записи в CSV
     public abstract String extraCsv();
 
-    /** Значение дополнительного поля для показа в таблице. */
+    //Значение дополнительного поля для показа в таблице
     public abstract String extraText();
 
-    /** Пересекается ли эта бронь с другой в одной и той же комнате. */
+    //Пересекается ли эта бронь с другой в одной и той же комнате
     public boolean overlaps(Booking other) {
         return room.equalsIgnoreCase(other.room)
                 && start.isBefore(other.end)
                 && other.start.isBefore(end);
     }
 
-    /** Проверка общих полей. Пустой список = ошибок нет. */
+    // Пустой список = ошибок нет
     public List<String> validateCommon() {
         List<String> errors = new ArrayList<>();
         if (isBlank(room)) errors.add("Не указана комната");

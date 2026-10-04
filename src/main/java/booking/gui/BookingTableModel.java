@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-/** Модель таблицы: хранит список броней и отдаёт их таблице JTable. */
+//Модель таблицы: хранит список броней и отдаёт их таблице JTable
 public class BookingTableModel extends AbstractTableModel {
     public static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 

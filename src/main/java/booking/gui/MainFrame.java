@@ -18,7 +18,7 @@ import java.awt.FlowLayout;
 import java.io.IOException;
 import java.util.List;
 
-/** Главное окно: таблица броней и четыре кнопки. */
+//Главное окно: таблица броней и четыре кнопки
 public class MainFrame extends JFrame {
     private final BookingTableModel model = new BookingTableModel();
     private final JTable table = new JTable(model);
@@ -56,8 +56,7 @@ public class MainFrame extends JFrame {
         setSize(950, 450);
         setLocationRelativeTo(null);
     }
-
-    /** «Изменить» доступна только если выбрана строка и её объект реализует Editable. */
+//Изменить доступна только если выбрана строка и её объект реализует Editable.
     private void updateEditButton() {
         int row = table.getSelectedRow();
         boolean canEdit = row >= 0 && model.getBooking(row) instanceof Editable;
@@ -100,7 +99,7 @@ public class MainFrame extends JFrame {
         }
     }
 
-    /** Через «Добавить» создаются только редактируемые типы (это гарантирует сам диалог). */
+    // Через добавить создаются только редактируемые типы
     private void onAdd() {
         BookingDialog dialog = new BookingDialog(this, null, nextId());
         dialog.setVisible(true);
@@ -113,7 +112,7 @@ public class MainFrame extends JFrame {
         int row = table.getSelectedRow();
         if (row < 0) return;
         Booking old = model.getBooking(row);
-        if (!(old instanceof Editable)) { // дополнительная защита, кнопка и так заблокирована
+        if (!(old instanceof Editable)) {
             showError("Эту запись нельзя изменять");
             return;
         }
@@ -128,7 +127,7 @@ public class MainFrame extends JFrame {
         return model.getAll().stream().mapToInt(Booking::getId).max().orElse(0) + 1;
     }
 
-    /** Проверка конфликта комнаты: пересечение по времени с другой бронью. */
+    //Проверка пересечения по времени с другой бронью
     private boolean hasConflict(Booking candidate) {
         for (Booking other : model.getAll()) {
             if (other.getId() != candidate.getId() && other.overlaps(candidate)) {

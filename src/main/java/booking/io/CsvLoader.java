@@ -19,14 +19,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Загрузка броней из CSV.
- * Формат: type;id;room;employee;start;end;extra (первая строка — заголовок).
- * Битые строки пропускаются, причины собираются в список errors.
- */
 public final class CsvLoader {
 
-    /** Результат загрузки: успешно прочитанные брони и сообщения о пропущенных строках. */
     public record LoadResult(List<Booking> bookings, List<String> errors) { }
 
     public LoadResult load(Path file) throws IOException {
@@ -63,7 +57,7 @@ public final class CsvLoader {
         return new LoadResult(result, errors);
     }
 
-    /** Разбор одной строки. При любой проблеме бросает исключение — вызывающий код пропустит строку. */
+    //Разбор одной строки
     private Booking parse(String line) {
         String[] p = line.split(";", -1);
         if (p.length != 7) {

@@ -2,10 +2,7 @@ package booking.model;
 
 import java.time.LocalDateTime;
 
-/**
- * Прошедшая бронь — «архивная» запись, только для чтения.
- * Не реализует Editable, а все сеттеры запрещены. Создаётся только при загрузке из файла.
- */
+//Прошедшая бронь — только для чтения. Создаётся только при загрузке из файла.
 public final class PastBooking extends Booking {
 
     public PastBooking(int id, String room, String employee, LocalDateTime start, LocalDateTime end) {

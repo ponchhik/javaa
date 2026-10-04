@@ -27,11 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Диалог добавления / редактирования брони.
- * Всегда создаёт НОВЫЙ объект (getResult), старый не изменяет —
- * поэтому при ошибке валидации исходные данные не портятся.
- */
+//Диалог добавления / редактирования брони
 public class BookingDialog extends JDialog {
     private static final Locale RU = Locale.forLanguageTag("ru");
 
@@ -46,10 +42,6 @@ public class BookingDialog extends JDialog {
     private final int id;
     private Booking result;
 
-    /**
-     * @param existing редактируемая бронь или null, если это добавление
-     * @param newId    id для новой брони (при редактировании берётся id существующей)
-     */
     public BookingDialog(Frame owner, Booking existing, int newId) {
         super(owner, existing == null ? "Добавить бронь" : "Изменить бронь", true);
         this.id = existing == null ? newId : existing.getId();
@@ -96,7 +88,6 @@ public class BookingDialog extends JDialog {
         setLocationRelativeTo(owner);
     }
 
-    /** @return созданная/изменённая бронь или null, если нажали «Отмена» */
     public Booking getResult() {
         return result;
     }
