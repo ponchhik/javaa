@@ -1,5 +1,6 @@
 package booking.gui;
 
+import booking.io.CsvFileException;
 import booking.io.CsvLoader;
 import booking.io.CsvSaver;
 import booking.model.Booking;
@@ -16,7 +17,6 @@ import javax.swing.ListSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.io.IOException;
-import java.util.List;
 
 //Главное окно: таблица броней и четыре кнопки
 public class MainFrame extends JFrame {
@@ -71,19 +71,15 @@ public class MainFrame extends JFrame {
             model.setAll(r.bookings());
             updateEditButton();
 
-            StringBuilder msg = new StringBuilder("Загружено записей: " + r.bookings().size());
-            List<String> errors = r.errors();
-            if (!errors.isEmpty()) {
-                msg.append("\nПропущено битых строк: ").append(errors.size());
-                for (int i = 0; i < Math.min(5, errors.size()); i++) {
-                    msg.append("\n  • ").append(errors.get(i));
-                }
-                if (errors.size() > 5) msg.append("\n  …");
+            if (r.errors().isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Загружено записей: " + r.bookings().size(),
+                        "Загрузка завершена", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                // есть пропущенные строки — показываем коды и причины
+                new LoadErrorsDialog(this, r.bookings().size(), r.errors()).setVisible(true);
             }
-            int type = errors.isEmpty() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE;
-            JOptionPane.showMessageDialog(this, msg.toString(), "Загрузка завершена", type);
-        } catch (IOException ex) {
-            showError("Не удалось прочитать файл:\n" + ex.getMessage());
+        } catch (CsvFileException ex) {
+            showError("[" + ex.getCode() + "] " + ex.getCode().getTitle() + ":\n" + ex.getMessage());
         }
     }
 

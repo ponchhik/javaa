@@ -14,18 +14,30 @@ import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public final class CsvLoader {
+    private static final int FIELD_COUNT = 7;
 
-    public record LoadResult(List<Booking> bookings, List<String> errors) { }
+    public record LoadResult(List<Booking> bookings, List<CsvLoadException> errors) {
 
-    public LoadResult load(Path file) throws IOException {
+        public Map<LoadErrorCode, Long> errorsByCode() {
+            Map<LoadErrorCode, Long> map = new EnumMap<>(LoadErrorCode.class);
+            for (CsvLoadException e : errors) {
+                map.merge(e.getCode(), 1L, Long::sum);
+            }
+            return map;
+        }
+    }
+
+    public LoadResult load(Path file) throws CsvFileException {
         List<Booking> result = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
+        List<CsvLoadException> errors = new ArrayList<>();
         Set<Integer> usedIds = new HashSet<>();
 
         try (BufferedReader reader = Files.newBufferedReader(file)) {
@@ -36,57 +48,82 @@ public final class CsvLoader {
                 lineNo++;
                 if (line.isBlank()) continue;
                 try {
-                    Booking b = parse(line);
-                    List<String> problems = b instanceof Editable e ? e.validate() : b.validateCommon();
-                    if (!problems.isEmpty()) {
-                        throw new IllegalArgumentException(String.join("; ", problems));
-                    }
-                    if (!usedIds.add(b.getId())) {
-                        throw new IllegalArgumentException("повторяющийся id " + b.getId());
-                    }
-                    result.add(b);
-                } catch (NumberFormatException ex) {
-                    errors.add("Строка " + lineNo + ": неверный числовой формат");
-                } catch (DateTimeParseException ex) {
-                    errors.add("Строка " + lineNo + ": неверный формат даты/времени");
-                } catch (IllegalArgumentException ex) {
-                    errors.add("Строка " + lineNo + ": " + ex.getMessage());
+                    result.add(parseAndCheck(line, lineNo, usedIds));
+                } catch (CsvLoadException ex) {
+                    errors.add(ex);
                 }
             }
+        } catch (IOException ex) {
+            throw new CsvFileException(ex);
         }
         return new LoadResult(result, errors);
     }
 
-    //Разбор одной строки
-    private Booking parse(String line) {
+    private Booking parseAndCheck(String line, int lineNo, Set<Integer> usedIds) throws CsvLoadException {
+        Booking b = parse(line, lineNo);
+
+        List<String> problems = b instanceof Editable e ? e.validate() : b.validateCommon();
+        if (!problems.isEmpty()) {
+            throw new CsvValidationException(LoadErrorCode.VALIDATION_FAILED, lineNo, problems);
+        }
+        if (!usedIds.add(b.getId())) {
+            throw new CsvValidationException(LoadErrorCode.DUPLICATE_ID, lineNo,
+                    List.of("повторяющийся id " + b.getId()));
+        }
+        return b;
+    }
+
+    // Разбор одной строки
+    private Booking parse(String line, int lineNo) throws CsvFormatException {
         String[] p = line.split(";", -1);
-        if (p.length != 7) {
-            throw new IllegalArgumentException("неверное число полей (" + p.length + " вместо 7)");
+        if (p.length != FIELD_COUNT) {
+            throw new CsvFormatException(LoadErrorCode.WRONG_FIELD_COUNT, lineNo,
+                    "неверное число полей (" + p.length + " вместо " + FIELD_COUNT + ")");
         }
         String type = p[0].trim();
-        int id = Integer.parseInt(p[1].trim());
+        int id = parseId(p[1], lineNo);
         String room = p[2].trim();
         String employee = p[3].trim();
-        LocalDateTime start = LocalDateTime.parse(p[4].trim());
-        LocalDateTime end = LocalDateTime.parse(p[5].trim());
+        LocalDateTime start = parseDateTime(p[4], "начала", lineNo);
+        LocalDateTime end = parseDateTime(p[5], "конца", lineNo);
         String extra = p[6].trim();
 
         return switch (type) {
             case "PAST" -> new PastBooking(id, room, employee, start, end);
             case "SINGLE" -> new SingleBooking(id, room, employee, start, end, extra);
-            case "RECURRING" -> new RecurringBooking(id, room, employee, start, end, parseDays(extra));
-            default -> throw new IllegalArgumentException("неизвестный тип «" + type + "»");
+            case "RECURRING" -> new RecurringBooking(id, room, employee, start, end, parseDays(extra, lineNo));
+            default -> throw new CsvFormatException(LoadErrorCode.UNKNOWN_TYPE, lineNo,
+                    "неизвестный тип «" + type + "»");
         };
     }
 
-    private static Set<DayOfWeek> parseDays(String text) {
+    private static int parseId(String text, int lineNo) throws CsvFormatException {
+        try {
+            return Integer.parseInt(text.trim());
+        } catch (NumberFormatException ex) {
+            throw new CsvFormatException(LoadErrorCode.BAD_NUMBER, lineNo,
+                    "id «" + text.trim() + "» не является целым числом", ex);
+        }
+    }
+
+    private static LocalDateTime parseDateTime(String text, String what, int lineNo) throws CsvFormatException {
+        try {
+            return LocalDateTime.parse(text.trim());
+        } catch (DateTimeParseException ex) {
+            throw new CsvFormatException(LoadErrorCode.BAD_DATE_TIME, lineNo,
+                    "неверная дата/время " + what + " «" + text.trim() + "»", ex);
+        }
+    }
+
+    private static Set<DayOfWeek> parseDays(String text, int lineNo) throws CsvFormatException {
         Set<DayOfWeek> days = EnumSet.noneOf(DayOfWeek.class);
         if (text.isBlank()) return days;
         for (String s : text.split(",")) {
             try {
                 days.add(DayOfWeek.valueOf(s.trim().toUpperCase()));
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("неизвестный день недели «" + s.trim() + "»");
+                throw new CsvFormatException(LoadErrorCode.BAD_DAY_OF_WEEK, lineNo,
+                        "неизвестный день недели «" + s.trim() + "»", ex);
             }
         }
         return days;
